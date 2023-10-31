@@ -1,6 +1,7 @@
 package com.payal.tiktoktoe.viewmodel
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,7 +9,6 @@ import com.payal.tiktoktoe.model.Cell
 import com.payal.tiktoktoe.model.Player
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlin.random.Random
 
 @HiltViewModel
 class GameViewModel @Inject constructor() : ViewModel() {
@@ -20,25 +20,29 @@ class GameViewModel @Inject constructor() : ViewModel() {
     private val _currentPlayer = MutableLiveData<Player>(Player.X)
     val currentPlayer = _currentPlayer
 
+    var currentIndex = mutableStateOf<Int?>(null)
+    var winner = mutableStateOf<String?>(null)
+
     init {
         _board.value = List(9) { Cell() }
+        currentIndex = mutableStateOf(null)
     }
 
-    fun onCellClick(index: Int):Pair<Int, Player> {
+    fun onCellClick(index: Int): Pair<Int, Player> {
         Log.d("taggg", "indexxxxxx : $index")
+        currentIndex.value = index
         var winner = Player.NONE
         val currentBoard = _board.value!!.toMutableList()
-        if(currentBoard[index].player == Player.NONE) {
+        if (currentBoard[index].player == Player.NONE) {
             count++
             currentBoard[index].player = _currentPlayer.value!!
             _board.value = currentBoard
-            if(count > 4){
+            if (count > 4) {
                 winner = checkWinner()
             }
             _currentPlayer.value = if (_currentPlayer.value == Player.X) Player.O else Player.X
-            Log.d("taggg", "current  : ${currentPlayer.value}  :::  board : ${board.value}")
         }
-        return Pair(count,winner)
+        return Pair(count, winner)
     }
 
     private fun checkWinner(): Player {
@@ -51,19 +55,22 @@ class GameViewModel @Inject constructor() : ViewModel() {
         return Player.NONE
     }
 
-    fun restart(){
+    fun restart() {
         _board.value = List(9) { Cell() }
         count = 0
     }
 
-    private fun selectRandom():Int{
-        var random = 0
-        val currentBoard = _board.value!!.toMutableList()
-        while(currentBoard[random].player != Player.NONE){
-            random = Random.nextInt(0, 9)
+    fun selectRandom(): Pair<Int, Player> {
+        lateinit var result: Pair<Int, Player>
+        val currentBoard =
+            board.value?.withIndex()?.filter { it.value.player == Player.NONE }?.map { it.index }
+                ?.random()
+        currentIndex.value = currentBoard
+        println("random : $currentBoard")
+        if (currentBoard != null) {
+            result = onCellClick(currentBoard)
         }
-        println("random : $random")
-        return random
+        return result
     }
 }
 

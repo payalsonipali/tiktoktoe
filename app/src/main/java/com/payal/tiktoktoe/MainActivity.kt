@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.payal.tiktoktoe.ui.theme.TiktoktoeTheme
 import com.payal.tiktoktoe.view.Board
+import com.payal.tiktoktoe.view.MainScreen
 import com.payal.tiktoktoe.viewmodel.GameViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -24,8 +25,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: GameViewModel = hiltViewModel()
-                    Board(viewModel)
+                    MainScreen()
                 }
             }
         }

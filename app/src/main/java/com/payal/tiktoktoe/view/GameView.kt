@@ -1,5 +1,7 @@
 package com.payal.tiktoktoe.view
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
@@ -15,8 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,13 +27,11 @@ import com.payal.tiktoktoe.model.Player
 import com.payal.tiktoktoe.viewmodel.GameViewModel
 
 @Composable
-fun Board(viewModel: GameViewModel) {
+fun Board(viewModel: GameViewModel, type: String?) {
     val cells by viewModel.board.observeAsState()
     val lazyListState = rememberLazyGridState()
 
-    var clickedCellIndex by remember { mutableStateOf<Int?>(null) }
-
-    var winner by remember { mutableStateOf<String?>(null) }
+    var clickedCellIndex by viewModel.currentIndex
 
     LaunchedEffect(clickedCellIndex) {
         clickedCellIndex?.let {
@@ -53,15 +51,8 @@ fun Board(viewModel: GameViewModel) {
                 Button(
                     shape = RectangleShape,
                     onClick = {
-                        clickedCellIndex = index
-                        val winnerPlayer = viewModel.onCellClick(index)
-                        Log.d("taggg","winnerPlayer : $winnerPlayer")
-                        if (winnerPlayer.second != Player.NONE) {
-                            winner = winnerPlayer.second.name
-                        }
-                        if(winnerPlayer.first >= 9 && winnerPlayer.second == Player.NONE){
-                            winner = "TIE"
-                        }
+                        if(type == "two player"){playGame(viewModel, index)}
+                        else {playWithRobot(viewModel, index)}
                     },
                     modifier = Modifier
                         .padding(8.dp)
@@ -79,19 +70,54 @@ fun Board(viewModel: GameViewModel) {
         }
     }
 
-    if (winner != null) {
+    if (viewModel.winner.value != null) {
         AlertDialog(
             onDismissRequest = {  },
-            title = { if(winner == "TIE")Text(text = "Match TIE") else Text(text = "Player $winner Winner")},
+            title = { if(viewModel.winner.value == "TIE")Text(text = "Match TIE") else Text(text = "Player ${viewModel.winner.value} Winner")},
             confirmButton = {
                 Button(
                     onClick = {
-                        winner = null
+                        viewModel.winner.value = null
                         viewModel.restart()
                     }) {
                     Text(text = "New Match")
                 }
             }
         )
+    }
+}
+
+fun playWithRobot(viewModel: GameViewModel, index: Int){
+    val winnerPlayer = viewModel.onCellClick(index)
+    Log.d("taggg","winnerPlayer : $winnerPlayer")
+    if (winnerPlayer.second != Player.NONE) {
+        viewModel.winner.value = winnerPlayer.second.name
+    }
+    if(winnerPlayer.first >= 9 && winnerPlayer.second == Player.NONE){
+        viewModel.winner.value = "TIE"
+    }
+    if(winnerPlayer.first < 9 && winnerPlayer.second == Player.NONE) {
+        Handler(Looper.getMainLooper()).postDelayed({
+            //Do something after 100ms
+            val winnerPlayer = viewModel.selectRandom()
+            Log.d("taggg", "winnerPlayer : $winnerPlayer")
+            if (winnerPlayer.second != Player.NONE) {
+                viewModel.winner.value = winnerPlayer.second.name
+            }
+            if (winnerPlayer.first >= 9 && winnerPlayer.second == Player.NONE) {
+                viewModel.winner.value = "TIE"
+            }
+        }, 300)
+    }
+}
+
+fun playGame(viewModel: GameViewModel, index: Int){
+    val winnerPlayer = viewModel.onCellClick(index)
+    Log.d("taggg","winnerPlayer : $winnerPlayer")
+    if (winnerPlayer.second != Player.NONE) {
+        viewModel.winner.value = winnerPlayer.second.name
+    }
+    if(winnerPlayer.first >= 9 && winnerPlayer.second == Player.NONE){
+        viewModel.winner.value = "TIE"
     }
 }
